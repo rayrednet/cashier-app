@@ -95,8 +95,8 @@ int main(int argc, char* argv[argc + 1])
 			}
 
 			if (choose2 == 2){
-				buy_product(argv[1], argv[3], product, rc);
-				print_receipt(argv[3], rc);
+				buy_product(argv[1], argv[2], product, rc);
+				print_receipt(argv[2], rc);
 				break;
 			}
 

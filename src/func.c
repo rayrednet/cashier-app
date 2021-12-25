@@ -234,7 +234,6 @@ void buy_product(char* catalog, char* receipt, struct Product product, struct Re
 			rc.totalPrice = payout;
 
 			payout = 0;
-
 			fill_receipt(rfp, receipt, rc);
 
 		} else {
@@ -250,6 +249,8 @@ void buy_product(char* catalog, char* receipt, struct Product product, struct Re
 
 void print_receipt(char* receipt, struct Receipt rc) {
 	static size_t printNum = 0;
+	printf("\n    receipt:%s\n", receipt);
+
 	FILE* rfp = fopen(receipt, "rb");
 	if (rfp == NULL) {
 		perror(receipt);
