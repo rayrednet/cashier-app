@@ -164,7 +164,19 @@ void fill_receipt(FILE* rfp, char* receipt, struct Receipt rc) {
 	freopen(receipt, "ab", rfp);
 }
 
-void buy_product(char* catalog, char* receipt, struct Product product, struct Receipt rc) {
+
+void removeReceipt(){
+	system("rm receipt.txt");
+	system("touch receipt.txt");
+
+}
+
+void fill_history(FILE* hfp, char* history, struct Receipt rc) {
+	fwrite(&rc, sizeof(struct Receipt), 1, hfp);
+	freopen(history, "ab", hfp);
+}
+
+void buy_product(char* catalog, char* receipt, char* history, struct Product product, struct Receipt rc) {
 	FILE* cfp = fopen(catalog, "rb+");
 	if (cfp == NULL) {
 		perror(catalog);
@@ -177,6 +189,22 @@ void buy_product(char* catalog, char* receipt, struct Product product, struct Re
 		exit(-5);
 	}
 
+	FILE* hfp = fopen(history, "ab");
+	if (hfp == NULL) {
+		perror(history);
+		exit(-5);
+	}
+
+
+	//Generate transaction ID, could use current timestamp
+	int _timestamp = (int) time(NULL);
+	time_t _trxTime = time(0);
+	char _timeStr [26];
+	struct tm* _timeInfo = localtime(&_trxTime);
+	strftime(_timeStr, 26, "%d %m %Y %H:%M:%S", _timeInfo);
+	// printf("\n        timestring:%s\n", _timeStr);
+	// time(_trxTime);
+	
 	int id;
 	size_t items;
 	size_t payout = 0;
@@ -229,12 +257,18 @@ void buy_product(char* catalog, char* receipt, struct Product product, struct Re
 
 			payout += product.price * items;
 
-			rc.id = id;
+			rc.productID = id;
 			strncpy(rc.name, product.name, 32);
 			rc.totalPrice = payout;
 
 			payout = 0;
+
+			// set transaction id with _timestamp
+			rc.id = _timestamp;
+			strncpy(rc.trxTime, _timeStr, 19);
+
 			fill_receipt(rfp, receipt, rc);
+			fill_history(hfp, receipt, rc);
 
 		} else {
 			setColor(LIGHTRED);
@@ -244,18 +278,22 @@ void buy_product(char* catalog, char* receipt, struct Product product, struct Re
 
 	fclose(cfp);
 	fclose(rfp);
+	fclose(hfp);
+
 	printf("\n");
 }
 
 void print_receipt(char* receipt, struct Receipt rc) {
 	static size_t printNum = 0;
-	printf("\n    receipt:%s\n", receipt);
+	// printf("\n    receipt:%s\n", receipt);
 
 	FILE* rfp = fopen(receipt, "rb");
 	if (rfp == NULL) {
 		perror(receipt);
 		exit(-2);
 	}
+	size_t total = 0;
+	size_t ret = fread(&rc, sizeof(struct Receipt), 1, rfp);
 
 	header ();
 	printf ("                            CASH RECEIPT\n");
@@ -266,17 +304,16 @@ void print_receipt(char* receipt, struct Receipt rc) {
 	// time(rc.trxTime);
 
 	setColor(LIGHTMAGENTA);
-	printf("Date and time = %s\n", ctime(&t));
-	printf("Receipt ID: %zu\n", printNum);
+	printf("Date and time = %s\n", rc.trxTime);
+	printf("Receipt ID: %zu\n", rc.id);
 	line ();
 	printNum++;
 	setColor(LIGHTCYAN);
-	printf("\n%-7s%-33s%10s\n", "ID", "Product Name", "Price");
+	printf("\n%-7s%-7s%-33s%10s\n", "No", "ID", "Product Name", "Price");
 	setColor(WHITE);
-	size_t total = 0;
-	size_t ret = fread(&rc, sizeof(struct Receipt), 1, rfp);
+	int _i =1;
 	while (ret) {
-		printf("%-7zu%-33s%10zu\n", rc.id, rc.name, rc.totalPrice);
+		printf("%-7d%-7zu%-33s%10zu\n", _i++, rc.productID, rc.name, rc.totalPrice);
 		total += rc.totalPrice;
 		ret = fread(&rc, sizeof(struct Receipt), 1, rfp);
 	}
@@ -284,9 +321,9 @@ void print_receipt(char* receipt, struct Receipt rc) {
 	fclose(rfp);
 
 	setColor(LIGHTGREEN);
-	printf("--------------------------------------------------\nTOTAL: ");
+	printf("---------------------------------------------------------\nTOTAL: ");
 	setColor(WHITE);
-	printf("%43zu\n", total);
+	printf("%50zu\n", total);
 	
 	setColor(LIGHTGREEN);
 	printf ("Cash   = Rp. ");
@@ -307,7 +344,10 @@ void print_receipt(char* receipt, struct Receipt rc) {
 	setColor (LIGHTBLUE);
 	printf ("Thank you for buying at Emporium Store. Have a nice day!\n");
 	setColor (WHITE);
+	
 	line ();
+
+	removeReceipt ();
 }
 
 void report (){

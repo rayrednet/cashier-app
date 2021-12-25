@@ -15,10 +15,13 @@ struct Product {
 
 struct Receipt {
 	size_t id;
+	size_t productID;
 	size_t totalPrice;
 	char name[40];
 	size_t cash;
 	size_t change;
+	char  trxTime [26];
+
 };
 
 struct Data {
@@ -32,7 +35,7 @@ void show_catalog(char* catalog, struct Product product);
 void modify_catalog(char* catalog, struct Product product);
 void update_catalog(FILE* cfp, struct Product product);
 void fill_receipt(FILE* rfp, char* receipt, struct Receipt rc);
-void buy_product(char* catalog, char* receipt, struct Product product, struct Receipt rc);
+void buy_product(char* catalog, char* receipt, char* history, struct Product product, struct Receipt rc);
 void print_receipt(char* receipt, struct Receipt rc);
 
 #endif

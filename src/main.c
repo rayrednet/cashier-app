@@ -58,7 +58,7 @@ int main(int argc, char* argv[argc + 1])
 			}
 
 			if (choose1 == 3){
-				// history (argv[1], product, rc, data);
+				history (argv[1], product, rc, data);
 			}
 
 			if (choose1 == 4){
@@ -81,7 +81,7 @@ int main(int argc, char* argv[argc + 1])
 			setColor (WHITE);
 			printf ("What do you want to do?\n");
 			printf ("1. Show product catalog\n");
-			printf ("2. Add product to cart\n");
+			printf ("2. Buy product\n");
 			printf ("3. Exit\n");
 
 			int choose2;
@@ -95,7 +95,7 @@ int main(int argc, char* argv[argc + 1])
 			}
 
 			if (choose2 == 2){
-				buy_product(argv[1], argv[2], product, rc);
+				buy_product(argv[1], argv[2], argv[3],  product, rc);
 				print_receipt(argv[2], rc);
 				break;
 			}
@@ -104,7 +104,6 @@ int main(int argc, char* argv[argc + 1])
 				setColor (LIGHTRED);
 				printf ("Exiting...\n\n");
 				menu = 0;
-				break;
 				break;
 			}
 
