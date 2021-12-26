@@ -17,6 +17,7 @@ int main(int argc, char* argv[argc + 1])
 	struct Receipt rc = {0};
 	struct Data data = {0};
 
+	user_dashboard:
 	header ();
 	setColor (LIGHTCYAN);
     printf ("Please choose this option:\n");
@@ -26,12 +27,14 @@ int main(int argc, char* argv[argc + 1])
 	int menu = 1;
 	while (menu) 
 	{
+		user_option:
 		setColor (LIGHTMAGENTA);
 		printf ("Enter option 1 or 2 = ");
 		scanf ("%d", &choose);
 		line ();
 
 		if (choose == 1 ){
+			admin_dashboard:
 			header ();
 			setColor (LIGHTBLUE);
 			printf ("Admin Dashboard\n");
@@ -39,8 +42,10 @@ int main(int argc, char* argv[argc + 1])
 			printf ("What do you want to do?\n");
 			printf ("1. Add new product\n");
 			printf ("2. Add product stock\n");
-			printf ("3. Show transaction report\n");
-			printf ("4. Exit\n");
+			printf ("3. Show transaction history and report\n");
+			printf ("4. Back\n");
+			printf ("5. Exit\n");
+			
 			int choose1;
 			setColor (LIGHTMAGENTA);
 			printf ("Enter option 1, 2. 3 or 4 = ");
@@ -49,19 +54,87 @@ int main(int argc, char* argv[argc + 1])
 			if (choose1 == 1){
 				setColor (WHITE);
 				addNewProduct(argv[1], product);
-					break;
+
+				adding_option:
+				setColor (LIGHTCYAN);
+				printf ("\n\nDo you want to go back to the admin dashboard? [y/n]\n> ");
+				setColor (WHITE);
+				char cs_dash;
+				scanf (" %c", &cs_dash);
+					if (cs_dash == 'y' ){
+						goto admin_dashboard;
+					}
+
+					else if (cs_dash == 'n'){
+						setColor (LIGHTCYAN);
+						printf ("\nGood bye! Thanks for visiting our shop.\n");
+						break;
+					}
+				
+					else {
+						setColor (LIGHTRED);
+						printf ("Invalid choice!\n");
+						goto adding_option;
+					}
 			}
 
-			if (choose1 == 2){
+			else if (choose1 == 2){
 				addNewStock (argv[1], product);
-				break;
+
+				stock_option:
+				setColor (LIGHTCYAN);
+				printf ("\n\nDo you want to go back to the admin dashboard? [y/n]\n> ");
+				setColor (WHITE);
+				char cs_dash;
+				scanf (" %c", &cs_dash);
+					if (cs_dash == 'y' ){
+						goto admin_dashboard;
+					}
+
+					else if (cs_dash == 'n'){
+						setColor (LIGHTCYAN);
+						printf ("\nGood bye! Thanks for visiting our shop.\n");
+						break;
+					}
+				
+					else {
+						setColor (LIGHTRED);
+						printf ("Invalid choice!\n");
+						goto stock_option;
+					}
 			}
 
-			if (choose1 == 3){
-				history (argv[1], product, rc, data);
+			else if (choose1 == 3){
+				history (argv[3], rc);
+
+				history_option:
+				setColor (LIGHTCYAN);
+				printf ("\n\nDo you want to go back to the admin dashboard? [y/n]\n> ");
+				setColor (WHITE);
+				char cs_dash;
+				scanf (" %c", &cs_dash);
+					if (cs_dash == 'y' ){
+						goto admin_dashboard;
+					}
+
+					else if (cs_dash == 'n'){
+						setColor (LIGHTCYAN);
+						printf ("\nGood bye! Thanks for visiting our shop.\n");
+						break;
+					}
+				
+					else {
+						setColor (LIGHTRED);
+						printf ("Invalid choice!\n");
+						goto history_option;
+					}
 			}
 
-			if (choose1 == 4){
+			else if (choose1 ==4){
+				goto user_dashboard;
+			}
+
+			else if (choose1 == 5){
 				setColor (LIGHTRED);
 				printf ("Exiting...\n\n");
 				menu = 0;
@@ -70,11 +143,13 @@ int main(int argc, char* argv[argc + 1])
 
 			else {
 			setColor (LIGHTRED);
-			printf ("You entered the wrong option, please input only 1, 2, 3 or 4\n");
+			printf ("You entered the wrong option, please input only 1, 2, 3, 4 or 5\n");
+			goto admin_dashboard;
 			}
 		}  
 
-		if (choose = 2){
+		else if (choose == 2){
+			customer_dashboard:
 			header ();
 			setColor (LIGHTBLUE);
 			printf ("Customer Dashboard\n");
@@ -82,7 +157,8 @@ int main(int argc, char* argv[argc + 1])
 			printf ("What do you want to do?\n");
 			printf ("1. Show product catalog\n");
 			printf ("2. Buy product\n");
-			printf ("3. Exit\n");
+			printf ("3. Back\n");
+			printf ("4. Exit\n");
 
 			int choose2;
 			setColor (LIGHTMAGENTA);
@@ -91,16 +167,62 @@ int main(int argc, char* argv[argc + 1])
 
 			if (choose2 == 1){
 				show_catalog(argv[1], product);
-				break;
+				catalog_option:
+				setColor (LIGHTCYAN);
+				printf ("\n\nDo you want to go back to the customer dashboard? [y/n]\n> ");
+				setColor (WHITE);
+				char cs_dash;
+				scanf (" %c", &cs_dash);
+					if (cs_dash == 'y' ){
+						goto customer_dashboard;
+					}
+
+					else if (cs_dash == 'n'){
+						setColor (LIGHTCYAN);
+						printf ("\nGood bye! Thanks for visiting our shop.\n");
+						break;
+					}
+				
+					else {
+						setColor (LIGHTRED);
+						printf ("Invalid choice!\n");
+						goto catalog_option;
+					}
 			}
 
-			if (choose2 == 2){
+			else if (choose2 == 2){
 				buy_product(argv[1], argv[2], argv[3],  product, rc);
 				print_receipt(argv[2], rc);
+
+				buying_option:
+				setColor (LIGHTCYAN);
+				printf ("\n\nDo you want to go back to the customer dashboard? [y/n]\n> ");
+				setColor (WHITE);
+				char cs_dash;
+				scanf (" %c", &cs_dash);
+					if (cs_dash == 'y' ){
+						goto customer_dashboard;
+					}
+
+					else if (cs_dash == 'n'){
+						setColor (LIGHTCYAN);
+						printf ("\nGood bye! Thanks for visiting our shop.\n");
+						break;
+					}
+				
+					else {
+						setColor (LIGHTRED);
+						printf ("Invalid choice!\n");
+						goto buying_option;
+					}
 				break;
 			}
 
-			if (choose2 == 3){
+			else if (choose2 == 3){
+				goto user_dashboard;
+			}
+
+			else if (choose2 == 4){
 				setColor (LIGHTRED);
 				printf ("Exiting...\n\n");
 				menu = 0;
@@ -109,13 +231,15 @@ int main(int argc, char* argv[argc + 1])
 
 			else {
 				setColor (LIGHTRED);
-				printf ("You entered the wrong option, please input only 1, 2 or 3\n");
+				printf ("You entered the wrong option, please input only 1, 2, 3 or 4\n");
+				goto customer_dashboard;
 			}
 		}
 
 		else {
 			setColor (LIGHTRED);
 			printf ("You entered the wrong option, please input only 1 or 2\n");
+			goto user_option;
 		}
 	}
 	return 0;

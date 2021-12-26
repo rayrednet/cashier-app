@@ -21,7 +21,7 @@ struct Receipt {
 	size_t cash;
 	size_t change;
 	char  trxTime [26];
-
+	size_t amount;
 };
 
 struct Data {
@@ -37,5 +37,5 @@ void update_catalog(FILE* cfp, struct Product product);
 void fill_receipt(FILE* rfp, char* receipt, struct Receipt rc);
 void buy_product(char* catalog, char* receipt, char* history, struct Product product, struct Receipt rc);
 void print_receipt(char* receipt, struct Receipt rc);
-
+void history(char * history, struct Receipt rc);
 #endif

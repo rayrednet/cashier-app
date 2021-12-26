@@ -11,6 +11,12 @@ void line ()
     printf ("========================================================================\n");
 }
 
+void single_line ()
+{
+	setColor (WHITE);
+	printf ("------------------------------------------------------------------------\n");
+}
+
 void header ()
 {
 	line();
@@ -199,9 +205,9 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 	//Generate transaction ID, could use current timestamp
 	int _timestamp = (int) time(NULL);
 	time_t _trxTime = time(0);
-	char _timeStr [26];
+	char _timeStr [40];
 	struct tm* _timeInfo = localtime(&_trxTime);
-	strftime(_timeStr, 26, "%d %m %Y %H:%M:%S", _timeInfo);
+	strftime(_timeStr, 26, "%Y %m %d %H:%M:%S", _timeInfo);
 	// printf("\n        timestring:%s\n", _timeStr);
 	// time(_trxTime);
 	
@@ -228,8 +234,11 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 		fseek(cfp, id * sizeof(struct Product), SEEK_SET);
 		fread(&product, sizeof(struct Product), 1, cfp);
 
-		printf("\n%-7s%-33s%7s%10s\n", "ID", "Product Name", "Stock", "Price");
-		printf("%-7zu%-33s%7zu%10zu\n", product.id, product.name, product.stock, product.price);
+		setColor (LIGHTCYAN);
+		printf("\n%-5s%-33s%7s%10s\n", "ID", "Product Name", "Stock", "Price");
+
+		setColor(WHITE);
+		printf("%-5zu%-33s%7zu%10zu\n", product.id, product.name, product.stock, product.price);
 
 		if (product.stock <= 0) {
 			printf("Sorry, %s is currently out of stock\n\n", product.name);
@@ -248,7 +257,7 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 		} while (items > product.stock);
 
 		if (items != 0) {
-			setColor(LIGHTGREEN);
+			setColor(LIGHTBLUE);
 			printf("%zu of %s successfully added to your cart with price %zu per unit.\n\n", items, product.name, product.price);
 
 			product.stock -= items;
@@ -266,6 +275,7 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 			// set transaction id with _timestamp
 			rc.id = _timestamp;
 			strncpy(rc.trxTime, _timeStr, 19);
+			rc.amount = items;
 
 			fill_receipt(rfp, receipt, rc);
 			fill_history(hfp, receipt, rc);
@@ -285,7 +295,6 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 
 void print_receipt(char* receipt, struct Receipt rc) {
 	static size_t printNum = 0;
-	// printf("\n    receipt:%s\n", receipt);
 
 	FILE* rfp = fopen(receipt, "rb");
 	if (rfp == NULL) {
@@ -301,19 +310,31 @@ void print_receipt(char* receipt, struct Receipt rc) {
 	
 	time_t t;
 	time(&t);
-	// time(rc.trxTime);
 
 	setColor(LIGHTMAGENTA);
-	printf("Date and time = %s\n", rc.trxTime);
-	printf("Receipt ID: %zu\n", rc.id);
-	line ();
+	printf("Date and time [YYYY] [MM] [DD] [HH] [MM] [SS]\n> ");
+
+	setColor (WHITE);
+	printf ("%s\n", rc.trxTime);
+
+	setColor (LIGHTMAGENTA);
+	printf("Receipt ID\n> ");
+
+	setColor(WHITE);
+	printf ("%zu\n", rc.id);
+
+	single_line ();
+
 	printNum++;
+
 	setColor(LIGHTCYAN);
-	printf("\n%-7s%-7s%-33s%10s\n", "No", "ID", "Product Name", "Price");
+	printf("\n%-7s%-7s%-33s%10s%10s\n", "No", "ID", "Product Name", "Amount", "Price");
+	
 	setColor(WHITE);
 	int _i =1;
+
 	while (ret) {
-		printf("%-7d%-7zu%-33s%10zu\n", _i++, rc.productID, rc.name, rc.totalPrice);
+		printf("%-7d%-7zu%-33s%10zu%10zu\n", _i++, rc.productID, rc.name, rc.amount, rc.totalPrice);
 		total += rc.totalPrice;
 		ret = fread(&rc, sizeof(struct Receipt), 1, rfp);
 	}
@@ -321,9 +342,9 @@ void print_receipt(char* receipt, struct Receipt rc) {
 	fclose(rfp);
 
 	setColor(LIGHTGREEN);
-	printf("---------------------------------------------------------\nTOTAL: ");
+	printf("------------------------------------------------------------------------\nTOTAL: ");
 	setColor(WHITE);
-	printf("%50zu\n", total);
+	printf("%60zu\n", total);
 	
 	setColor(LIGHTGREEN);
 	printf ("Cash   = Rp. ");
@@ -352,60 +373,76 @@ void print_receipt(char* receipt, struct Receipt rc) {
 
 void report (){
 	setColor (LIGHTCYAN);
-	printf ("Capital	= ");
-	printf ("Items sold = ");
-	printf ("Income		= ");
+	printf ("\n\nInitial capital = ");
+	setColor (WHITE);
 
-	printf ("Profit		= ");
+	setColor (LIGHTCYAN);
+	printf ("Items sold 	 = ");
+	setColor (WHITE);
+
+	setColor (LIGHTCYAN);
+	printf ("Income			 = ");
+	setColor (WHITE);
+
+	setColor (LIGHTCYAN);
+	printf ("Profit			 = ");
+	setColor (WHITE);
 }
 
-void history (char* history, struct Product product, struct Receipt rc, struct Data data)
-{
-	FILE* cfp = fopen (history, "rb");
-	if (cfp == NULL){
+void history (char* history, struct Receipt rc)
+{	
+	int i=0;
+	FILE* hfp = fopen(history, "rb");
+	if (hfp == NULL){
 		perror (history);
-		exit (-3);
+		exit (-4);
 	}
-
 	header ();
 	setColor (LIGHTBLUE);
-	printf ("Transaction Report\n\n");
+	printf ("Transaction history and report\n\n");
+
+
+	// history_dashboard:
+	char _minDate [40];
+	char _maxDate [40];
+	setColor(LIGHTGREEN);
+	printf ("Please input date range to see transaction report\n");
+	printf ("Format input (YYYY MM DD HH:MM:SS) \n\n");
 
 	setColor(WHITE);
 	printf ("If you have finished, input -1 in the start date\n");
+	
+	// size_t ret = 
+	// int go;
+	setColor(LIGHTCYAN);
+	printf ("Start date\n> ");
+	setColor(WHITE);
+	scanf(" %[^\n]", _minDate);
 
-	int minDay, minMonth, minYear, maxDay, maxMonth, maxYear;
-	while (1)
-	{
-		setColor(LIGHTGREEN);
-		printf ("Please input date range to see transaction report\n");
-			setColor(LIGHTCYAN);
-			printf ("Start date\n> ");
-				setColor(WHITE);
-				scanf ("%d %d %d", &minDay, &minMonth, &minYear);
-					if (minDay == -1) break;
-		setColor(LIGHTCYAN);
-		printf ("End date\n> ");
-			setColor(WHITE);
-			scanf ("%d %d %d", &maxDay, &maxMonth, &maxYear);	
+	if (strcmp( _minDate, "-1")== 0) {
+		exit(3);
+	}
+
+	setColor(LIGHTCYAN);
+	printf ("End date\n> ");
+	setColor(WHITE);	
+	scanf(" %[^\n]", _maxDate);
+
+	setColor (LIGHTMAGENTA);
+	printf( "\n%-13s%-30s%-10s%-11s%-20s\n","Receipt ID", "Product", "Amount", "Price", "Date and time" );
+	while (fread(&rc, sizeof(struct Receipt), 1, hfp)){
 		
-		setColor (LIGHTMAGENTA);
-		printf( "\n%-6s%-26s%-10s%-11s%-10s%-10s\n","ID", "Product", "Amount", "Price", "Total", "Time" );
-
-		while (!feof( cfp ) ) 
-		{ 
-				if(fread( &data, sizeof( struct Data ), 1, cfp )){
-					if ( rc.id != -1 ) {
-						if(data.day >= minDay && data.day <= maxDay && data.month >= minMonth && data.month <= maxMonth && data.year >= minYear && data.year <= maxYear){
-						setColor (WHITE);
-						printf("%-6zu%-26s%-10zu%-11zu%-10zu%-10s\n", product.id, product.name, product.items, product.price, rc.totalPrice, data.time);
-						}
-
-						}
-	}
-		report ();
+		if (strcmp(rc.trxTime, _minDate) >=0  && strcmp(rc.trxTime, _maxDate) <=0 ) {
+			setColor (WHITE);
+			printf("%-13zu%-30s%-10zu%-11zu%-20s\n", rc.id, rc.name, rc.amount, rc.totalPrice, rc.trxTime);
 		}
-	}
 
-	fclose (cfp);
+	}
+			//if no data found print this 
+			// else {
+			// 	setColor (LIGHTRED);
+			// 	printf ("Sorry we couldn't find any matching transaction history\n");
+			// }
+
+	fclose (hfp);
 }
