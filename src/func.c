@@ -59,6 +59,7 @@ void addNewProduct(char* catalog, struct Product product) {
 	setColor (LIGHTBLUE);
 		printf ("Add Product to Catalog\n");
 		setColor (WHITE);
+		single_line ();
 	printf ("If you have finished adding new product, please enter -1 in the product ID\n\n");
 
 	while (1) {
@@ -120,13 +121,13 @@ void addStock(FILE* cfp, struct Product product) {
 	fwrite(&product, sizeof(struct Product), 1, cfp);
 }
 
-void addNewStock (char* catalog, struct Product product) {
+void updateStock (char* catalog, struct Product product) {
 	FILE* cfp  = fopen(catalog, "rb+");
 	header ();
 	setColor (LIGHTBLUE);
 	printf ("Add Product Stock\n");
 	setColor (WHITE);
-	line ();
+	single_line ();
 
 	printf ("If you have finished adding product stock, enter -1 in the product's ID\n");
 	
@@ -142,34 +143,40 @@ void addNewStock (char* catalog, struct Product product) {
 		}
 
 		fseek(cfp, tempID * sizeof(struct Product), SEEK_SET);
-		while(fread(&product, sizeof(struct Product), 1, cfp)> 0){
-			if(tempID ==  product.id){
+
+		int flag = 0;
+		while(fread(&product, sizeof(struct Product), 1, cfp) > 0){
+			if(tempID == product.id){
 				setColor (LIGHTGREEN);
 				printf ("Input how many stock that you want to add:\n> ");
 				setColor (WHITE);
 				size_t tempStock;
 				scanf ("%zu", &tempStock);
 
-				product.stock += tempStock;
-				fwrite(&product, sizeof(struct Product), 1, cfp);
 
+				product.stock += tempStock;
+				fseek (cfp, -sizeof (product), SEEK_CUR);
+				fwrite(&product, sizeof(struct Product), 1, cfp);
+				
+				flag++;
 				setColor (LIGHTCYAN);
 				printf ("%zu of %s with ID %zu successfully added to the catalog\n", tempStock, product.name, product.id);
 				fclose(cfp);
 				break;
+
 			}
+				
+				if (flag == 0)
+				fclose (cfp);
 		}	
 
-		fclose (cfp);
 	}
-
 }
 
 void fill_receipt(FILE* rfp, char* receipt, struct Receipt rc) {
 	fwrite(&rc, sizeof(struct Receipt), 1, rfp);
 	freopen(receipt, "ab", rfp);
 }
-
 
 void removeReceipt(){
 	system("rm receipt.txt");
@@ -201,15 +208,12 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 		exit(-5);
 	}
 
-
 	//Generate transaction ID, could use current timestamp
 	int _timestamp = (int) time(NULL);
 	time_t _trxTime = time(0);
 	char _timeStr [40];
 	struct tm* _timeInfo = localtime(&_trxTime);
 	strftime(_timeStr, 26, "%Y %m %d %H:%M:%S", _timeInfo);
-	// printf("\n        timestring:%s\n", _timeStr);
-	// time(_trxTime);
 	
 	int id;
 	size_t items;
@@ -219,6 +223,7 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 	setColor (LIGHTBLUE);
 	printf ("Buy Product\n");
 	setColor(WHITE);
+	single_line ();
 	printf("If you have finished buying product, please enter -1 in the product ID\n");
 
 	while (1) {
@@ -269,6 +274,7 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 			rc.productID = id;
 			strncpy(rc.name, product.name, 32);
 			rc.totalPrice = payout;
+			rc.acquisitionPrice = product.purchasePricePerUnit;
 
 			payout = 0;
 
@@ -294,15 +300,15 @@ void buy_product(char* catalog, char* receipt, char* history, struct Product pro
 }
 
 void print_receipt(char* receipt, struct Receipt rc) {
-	static size_t printNum = 0;
-
 	FILE* rfp = fopen(receipt, "rb");
+
 	if (rfp == NULL) {
 		perror(receipt);
 		exit(-2);
 	}
+
 	size_t total = 0;
-	size_t ret = fread(&rc, sizeof(struct Receipt), 1, rfp);
+	size_t readReceipt = fread(&rc, sizeof(struct Receipt), 1, rfp);
 
 	header ();
 	printf ("                            CASH RECEIPT\n");
@@ -325,18 +331,16 @@ void print_receipt(char* receipt, struct Receipt rc) {
 
 	single_line ();
 
-	printNum++;
-
 	setColor(LIGHTCYAN);
 	printf("\n%-7s%-7s%-33s%10s%10s\n", "No", "ID", "Product Name", "Amount", "Price");
 	
 	setColor(WHITE);
 	int _i =1;
 
-	while (ret) {
+	while (readReceipt) {
 		printf("%-7d%-7zu%-33s%10zu%10zu\n", _i++, rc.productID, rc.name, rc.amount, rc.totalPrice);
 		total += rc.totalPrice;
-		ret = fread(&rc, sizeof(struct Receipt), 1, rfp);
+		readReceipt = fread(&rc, sizeof(struct Receipt), 1, rfp);
 	}
 
 	fclose(rfp);
@@ -367,30 +371,55 @@ void print_receipt(char* receipt, struct Receipt rc) {
 	setColor (WHITE);
 	
 	line ();
-
 	removeReceipt ();
 }
 
-void report (){
-	setColor (LIGHTCYAN);
-	printf ("\n\nInitial capital = ");
-	setColor (WHITE);
+size_t getCurrentInitialCapital (char* catalog, struct Product product) 
+{
+	FILE* cfp = fopen (catalog, "rb");
 
-	setColor (LIGHTCYAN);
-	printf ("Items sold 	 = ");
-	setColor (WHITE);
+	if (cfp == NULL){
+		perror(catalog);
+		exit (-5);
+	}
+	size_t _capital = 0;
 
-	setColor (LIGHTCYAN);
-	printf ("Income			 = ");
-	setColor (WHITE);
+	while (fread (&product, sizeof(struct Product), 1, cfp)){
+			size_t _stock = product.stock;
+			size_t _price = product.purchasePricePerUnit;
 
-	setColor (LIGHTCYAN);
-	printf ("Profit			 = ");
-	setColor (WHITE);
+			_capital += (_stock * _price) ;
+	}
+	fclose (cfp);
+	return _capital;
 }
 
-void history (char* history, struct Receipt rc)
+void report (char* _minDate, char* _maxDate, char* catalog, struct Product product, struct ReportReceipt _report){
+	setColor (LIGHTBLUE);
+	printf ("\n\nInitial capital\n> ");
+	setColor (WHITE);
+	size_t _currentCapital = getCurrentInitialCapital(catalog, product);
+	printf ("Rp. %zu\n", _currentCapital );
+
+	setColor (LIGHTBLUE);
+	printf ("\nItems sold\n> ");
+	setColor (WHITE);
+	printf ("%zu\n", _report.soldItem);
+
+	setColor (LIGHTBLUE);
+	printf ("\nIncome\n> ");
+	setColor (WHITE);
+	printf ("Rp. %zu\n", _report.income);
+
+	setColor (LIGHTBLUE);
+	printf ("\nProfit\n> ");
+	setColor (WHITE);
+	printf ("Rp. %zu\n", _report.profit);
+}
+
+struct ReportReceipt history (char* _minDate, char* _maxDate, char* history,  struct Receipt rc)
 {	
+	struct ReportReceipt result;
 	int i=0;
 	FILE* hfp = fopen(history, "rb");
 	if (hfp == NULL){
@@ -399,50 +428,31 @@ void history (char* history, struct Receipt rc)
 	}
 	header ();
 	setColor (LIGHTBLUE);
-	printf ("Transaction history and report\n\n");
-
-
-	// history_dashboard:
-	char _minDate [40];
-	char _maxDate [40];
-	setColor(LIGHTGREEN);
-	printf ("Please input date range to see transaction report\n");
-	printf ("Format input (YYYY MM DD HH:MM:SS) \n\n");
-
+	printf ("Transaction history and report\n");
 	setColor(WHITE);
-	printf ("If you have finished, input -1 in the start date\n");
-	
-	// size_t ret = 
-	// int go;
-	setColor(LIGHTCYAN);
-	printf ("Start date\n> ");
-	setColor(WHITE);
-	scanf(" %[^\n]", _minDate);
-
-	if (strcmp( _minDate, "-1")== 0) {
-		exit(3);
-	}
-
-	setColor(LIGHTCYAN);
-	printf ("End date\n> ");
-	setColor(WHITE);	
-	scanf(" %[^\n]", _maxDate);
-
+	single_line ();
 	setColor (LIGHTMAGENTA);
 	printf( "\n%-13s%-30s%-10s%-11s%-20s\n","Receipt ID", "Product", "Amount", "Price", "Date and time" );
-	while (fread(&rc, sizeof(struct Receipt), 1, hfp)){
-		
-		if (strcmp(rc.trxTime, _minDate) >=0  && strcmp(rc.trxTime, _maxDate) <=0 ) {
+
+	int count = 0;
+
+	while (fread(&rc, sizeof(struct Receipt), 1, hfp))
+	{	
+		if (strcmp(rc.trxTime, _minDate) >=0  && strcmp(rc.trxTime, _maxDate) <=0 ) 
+		{
 			setColor (WHITE);
 			printf("%-13zu%-30s%-10zu%-11zu%-20s\n", rc.id, rc.name, rc.amount, rc.totalPrice, rc.trxTime);
+			result.soldItem += rc.amount;
+			result.income += rc.totalPrice;
+			result.profit = result.income - rc.acquisitionPrice*rc.amount;
+			count++;
 		}
-
 	}
-			//if no data found print this 
-			// else {
-			// 	setColor (LIGHTRED);
-			// 	printf ("Sorry we couldn't find any matching transaction history\n");
-			// }
-
+	if (count == 0) {
+		setColor (LIGHTRED);
+		printf ("Sorry we couldn't find any matching transaction history\n");
+	}
 	fclose (hfp);
+
+	return result ;
 }

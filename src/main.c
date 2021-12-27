@@ -15,10 +15,13 @@ int main(int argc, char* argv[argc + 1])
 
 	struct Product product = {0};
 	struct Receipt rc = {0};
-	struct Data data = {0};
 
 	user_dashboard:
 	header ();
+	setColor (LIGHTBLUE);
+	printf ("User Dashboard\n");
+	setColor (WHITE);
+	single_line ();
 	setColor (LIGHTCYAN);
     printf ("Please choose this option:\n");
     printf ("1. Admin\n");
@@ -39,6 +42,7 @@ int main(int argc, char* argv[argc + 1])
 			setColor (LIGHTBLUE);
 			printf ("Admin Dashboard\n");
 			setColor (WHITE);
+			single_line ();
 			printf ("What do you want to do?\n");
 			printf ("1. Add new product\n");
 			printf ("2. Add product stock\n");
@@ -79,7 +83,7 @@ int main(int argc, char* argv[argc + 1])
 			}
 
 			else if (choose1 == 2){
-				addNewStock (argv[1], product);
+				updateStock (argv[1], product);
 
 				stock_option:
 				setColor (LIGHTCYAN);
@@ -105,7 +109,32 @@ int main(int argc, char* argv[argc + 1])
 			}
 
 			else if (choose1 == 3){
-				history (argv[3], rc);
+
+			char _minDate [40];
+			char _maxDate [40];
+			setColor(LIGHTGREEN);
+			printf ("Please input date range to see transaction report\n");
+			printf ("Format input (YYYY MM DD HH:MM:SS) \n\n");
+
+			setColor(WHITE);
+			printf ("If you have finished, input -1 in the start date to go back to admin dashboard\n");
+			
+			setColor(LIGHTCYAN);
+			printf ("Start date\n> ");
+			setColor(WHITE);
+			scanf(" %[^\n]", _minDate);
+
+			if (strcmp( _minDate, "-1") == 0) {
+				goto admin_dashboard;
+			}
+
+			setColor(LIGHTCYAN);
+			printf ("End date\n> ");
+			setColor(WHITE);	
+			scanf(" %[^\n]", _maxDate);
+
+				struct ReportReceipt _aggregate = history(_minDate, _maxDate, argv[3], rc);
+				report (_minDate, _maxDate, argv[1], product, _aggregate);
 
 				history_option:
 				setColor (LIGHTCYAN);
